@@ -1,16 +1,6 @@
 from torch.utils.data import TensorDataset, DataLoader
 import torch
-
-
-def create_tensors(words, sequence_length):
-    length = len(words) - sequence_length
-    feature_tensors = []
-    target_tensors = []
-    for start in range(0, length):
-        feature_tensors.append(words[start:sequence_length + start])
-        target_tensors.append(words[sequence_length + start:sequence_length + start + 1])
-
-    return torch.Tensor(feature_tensors), torch.Tensor(target_tensors)
+import numpy as np
 
 
 def batch_data(words, sequence_length, batch_size):
@@ -23,20 +13,36 @@ def batch_data(words, sequence_length, batch_size):
     """
     # TODO: Implement function
 
-    feature_tensors, target_tensors = create_tensors(words, sequence_length)
+    n_batches = len(words) // batch_size
+    # only full batches
+    words = words[:n_batches * batch_size]
 
-    data = TensorDataset(feature_tensors, target_tensors)
-    data_loader = torch.utils.data.DataLoader(data,
-                                              batch_size=batch_size)
+    # TODO: Implement function
+    features, targets = [], []
+
+    for idx in range(0, (len(words) - sequence_length)):
+        features.append(words[idx: idx + sequence_length])
+        targets.append(words[idx + sequence_length])
+
+    data = TensorDataset(torch.from_numpy(np.asarray(features)), torch.from_numpy(np.asarray(targets)))
+    data_loader = torch.utils.data.DataLoader(data, shuffle=False, batch_size=batch_size)
 
     return data_loader
+    #
+    # feature_tensors, target_tensors = create_tensors(words, sequence_length)
+    #
+    # data = TensorDataset(feature_tensors, target_tensors)
+    # data_loader = torch.utils.data.DataLoader(data,
+    #                                           batch_size=batch_size)
+    #
+    # return data_loader
 
-print(create_tensors(words=[1, 2, 3, 4, 5, 6, 7], sequence_length=4))
+
+# print(create_tensors(words=[1, 2, 3, 4, 5, 6, 7], sequence_length=4))
 
 
-data_loader = batch_data(words=[1, 2, 3, 4, 5, 6, 7], sequence_length=4, batch_size=2)
-
-
-
-
-
+data_loader = batch_data(words=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12], sequence_length=4, batch_size=3)
+it = iter(data_loader)
+x, y = next(it)
+print(x)
+print(y)

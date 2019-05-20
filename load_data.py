@@ -126,16 +126,22 @@ batch_size = 4
 # data loader - do not change
 train_loader = batch_data(int_text, sequence_length, batch_size)
 inputs, labels = next(iter(train_loader))
-import torch.nn as nn
+# import torch.nn as nn
+#
+# n_vocab = len(int_to_vocab)
+# n_embed = 500
+# n_layers = 3
+# embedding_dim = 500
+# hidden_dim = 25
+# dropout = 0.1
+#
+# embed = nn.Embedding(n_vocab, n_embed)
+# lstm = nn.LSTM(embedding_dim, hidden_dim, n_layers,
+#                dropout=dropout, batch_first=True)
+#
+#
+# out = embed(inputs)
+# out = lstm.forward(out)
+# print(out)
 
-n_vocab = len(int_to_vocab)
-n_embed = 500
-
-embed = nn.Embedding(n_vocab, n_embed)
-lstm = nn.LSTM(n_embed, 3)
-
-out = embed(inputs)
-out = lstm.forward(out)
-print(out)
-
-#print(lstm)
+# print(lstm)

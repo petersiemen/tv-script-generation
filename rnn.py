@@ -1,3 +1,7 @@
+import load_data
+
+train_on_gpu = False
+
 import torch.nn as nn
 
 
@@ -17,6 +21,8 @@ class RNN(nn.Module):
 
         # set class variables
         self.hidden_dim = hidden_dim
+        self.n_layers = n_layers
+        self.output_size = output_size
 
         # define model layers
         self.embed = nn.Embedding(vocab_size, embedding_dim)
@@ -24,7 +30,7 @@ class RNN(nn.Module):
                             dropout=dropout, batch_first=True)
 
         self.fc = nn.Linear(hidden_dim, output_size)
-
+        self.log_softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, nn_input, hidden):
         """
@@ -34,18 +40,27 @@ class RNN(nn.Module):
         :return: Two Tensors, the output of the neural network and the latest hidden state
         """
         # TODO: Implement function
-        embeds = self.embedding(nn_input)
-        lstm_out, hidden = self.lstm(embeds, hidden)
 
-        # stack up lstm outputs
-        lstm_out = lstm_out.contiguous().view(-1, self.hidden_dim)
+        batch_size = nn_input.size(0)
+        # pass input through embedding layer
+        embeds = self.embed(nn_input)
 
-        # dropout and fully-connected layer
-        out = self.dropout(lstm_out)
-        out = self.fc(out)
+        # get RNN outputs
+        r_out, hidden = self.lstm(embeds, hidden)
+        # shape output to be (batch_size*seq_length, hidden_dim)
+
+        # Stack up rnn output
+        r_out = r_out.contiguous().view(-1, self.hidden_dim)
+
+        # get final output
+        output = self.fc(r_out)
+        output = output.view(batch_size, -1, self.output_size)
+        out = output[:, -1]  # get last batch of labels
+        # return one batch of output word scores and the hidden state
+        return out, hidden
 
         # return one batch of output word scores and the hidden state
-        return None, hidden
+        # return None, None
 
     def init_hidden(self, batch_size):
         '''
@@ -57,10 +72,20 @@ class RNN(nn.Module):
 
         # initialize hidden state with zero weights, and move to GPU if available
 
-        return None
+        # Create two new tensors with sizes n_layers x batch_size x n_hidden,
+        # initialized to zero, for hidden state and cell state of LSTM
+        weight = next(self.parameters()).data
+
+        if (train_on_gpu):
+            hidden = (weight.new(self.n_layers, batch_size, self.hidden_dim).zero_().cuda(),
+                      weight.new(self.n_layers, batch_size, self.hidden_dim).zero_().cuda())
+        else:
+            hidden = (weight.new(self.n_layers, batch_size, self.hidden_dim).zero_(),
+                      weight.new(self.n_layers, batch_size, self.hidden_dim).zero_())
+
+        return hidden
 
 
-"""
-DON'T MODIFY ANYTHING IN THIS CELL THAT IS BELOW THIS LINE
-"""
-# tests.test_rnn(RNN, false)
+from problem_unittests import test_rnn
+
+test_rnn(RNN, False)
